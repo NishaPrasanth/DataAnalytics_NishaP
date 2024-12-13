@@ -1,0 +1,375 @@
+---
+title: "Case study: How does a bike-share navigate speedy success?"
+author: "Nisha P"
+date: "2024-03-31"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+Cyclistic, a prominent bike-share company headquartered in Chicago, has
+rapidly gained traction in the city's transportation landscape. In an
+effort to delve deeper into their customer base and refine their
+marketing strategies, Cyclistic seeks to understand the distinct
+behaviors and preferences of casual riders versus annual members.
+
+The company recognizes the need to tailor its marketing approach to
+effectively convert casual riders into committed annual members. By
+leveraging data-driven insights, Cyclistic aims to develop a
+comprehensive understanding of how these two customer segments interact
+with their services differently.
+
+**Business Task**
+
+The objective of this business task is to develop a comprehensive
+marketing strategy for Cyclistic that addresses the distinct needs and
+behaviors of both annual members and casual riders. By answering the
+following three questions, we aim to optimize marketing efforts,
+increase customer engagement, and drive conversions from casual riders
+to annual members.
+
+-   ***Understanding Usage Patterns***: Analyze Cyclistic's dataset to
+    identify differences in how annual members and casual riders utilize
+    Cyclistic bikes.
+
+**Data Background**
+
+The dataset was acquired from click here
+![Link](https://divvytripdata.s3.amazonaws.com/index.html) *Motivate
+International Inc* made the data available under this
+![license](https://divvybikes.com/data-license-agreement).
+
+For this project, I downloaded data for twelve months (January to
+December 2020). The zipped CSVs were downloaded and unzipped into a
+folder.
+
+Below shown the dataset of a *cyclistic biketrip data for the year
+2020*.The dataset has *3541683* rows and *13* column.
+
+Due to the large size of data we use *R* to analyse effectively.
+
+## R Programming
+
+-   ***Loading Packages*** The R package is a collection of R functions,
+    data sets, and compiled code that extends the functionality of R.
+    Here we use four packages to analyse the data.
+
+![Load Packages](C:\Users\home\Documents\package.PNG)
+
+In R, the *library()* function is used to load R packages into your
+current R session
+
+```{r}
+library (tidyverse)
+library (janitor)
+library (lubridate)
+library (scales)
+rm(list=ls())
+```
+
+-   **Read CSV file**
+
+Below given are the year ***2020 dataset** of cyclistic bike share
+program* which are downloaded and saved as CSV files. Here
+***read.csv()*** is used for reading the csv files.
+
+```{r}
+df1 <- read.csv("Divvy_Trips_2020_Q1.csv")
+df2 <-  read.csv("202004.csv")
+df3 <- read.csv("202005.csv")
+df4 <- read.csv("202006.csv")
+df5<- read.csv("202007.csv")
+df6 <- read.csv("202008.csv")
+df7 <- read.csv("202009.csv")
+df8 <- read.csv("202010.csv")
+df9 <- read.csv("202011.csv")
+df10 <- read.csv("202012.csv")
+df20 <- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10)
+```
+
+In R, the ***head()*** function is used to view the first few rows of a
+data frame or a matrix. It allows you to quickly inspect the structure
+and content of your data without displaying the entire dataset.
+
+```{r}
+head(df20)
+```
+
+-   **Cleaning Data**
+
+***Janitor*** is an R package that provides a set of functions to clean
+and preprocess data in R data frames
+
+```{r}
+df20_cleanedcols <- janitor::remove_empty(df20,which =c("cols"))
+df20_cleanedrows <- janitor::remove_empty(df20,which =c("rows"))
+dim(df20_cleanedcols)
+dim(df20_cleanedrows)
+```
+
+-   **Removing duplicates and NA values**
+
+```{r}
+df20_clean <- na.omit(df20)
+# for unique and removing duplicates 
+unique(df20_clean)
+dim(df20_clean)
+df20_clean <- df20_clean %>% filter(df20_clean$start_station_name!=" ")
+```
+
+-   **Organising Data**
+
+*Lubridate* is an R package designed to make it easier to work with
+dates and times in R. It provides a set of functions that simplify
+common tasks such as parsing, manipulating, and formatting dates and
+times.we use parse date *ymd_hms()* and *as.Date()* for changing the
+Started_at and ended_at column format.
+
+![Check](C:\Users\home\Documents\char.PNG)
+
+![changed](C:\Users\home\Documents\POXIXCT.PNG)
+
+***Difftime()*** is used for calculating the difference in time. This
+helps us to find and analyse the duration of each ride.
+
+```{r}
+
+##convert time and date
+df <- df20_clean
+#date
+df$started_date <- as.Date(df$started_at)
+df$ended_date <- as.Date(df$ended_at)
+#time as  hours and minutes
+df$started_at <- lubridate::ymd_hms(df$started_at)
+df$ended_at <- lubridate::ymd_hms(df$ended_at)
+
+df$start_hour <-lubridate::hour(df$started_at)
+df$ended_hour <-lubridate::hour(df$ended_at)
+
+df$Hours <- difftime(df$ended_at,df$started_at,units = c("hours"))
+df$Minutes <- difftime(df$ended_at,df$started_at,units = c("mins"))
+
+df <- df %>% 
+  filter(Minutes>0)
+
+View(df)
+
+```
+
+Dim function ***dim(df)*** retrieve or set the dimensions of an object,
+such as a matrix or an array.
+
+Here's how it works:
+
+```{r}
+dim(df)
+```
+
+-   **Summarize the data**
+
+```{r}
+df2 <- df %>% 
+    group_by(weekly = floor_date(started_date,"week"),start_hour) %>% 
+    summarise(Minutes = sum(Minutes), 
+              mean = mean(Minutes),Max = max(Minutes),
+              min = min(Minutes),count = n()) %>% 
+              ungroup()
+ 
+```
+
+```{r}
+View(df2)
+```
+
+Here how it looks like
+![Time](C:\Users\home\Documents\time%20change.PNG)
+
+```{r}
+
+summary(df2$count)
+```
+
+```{r}
+#table of counts by hours
+xtabs(df2$count~df2$start_hour)
+
+```
+
+```{r}
+#table of count by months
+df2$Monthy <- lubridate::month(df2$weekly)
+```
+
+-   **Data Visualisation**
+
+The *ggplot()* function is the primary function used in the ggplot2
+package, a popular data visualization package in R. It is used to create
+and customize plots based on a grammar of graphics approach, allowing
+users to create complex and highly customizable visualizations with
+relatively simple syntax.
+
+Here's how the ggplot() workes to calculate
+
+1.  ***Rides Done on Per Day***
+
+```{r}
+#hourly count per ride
+df2 %>% 
+  ggplot() + geom_col(aes(x=weekly,y=count))+ scale_y_continuous(labels = comma)+
+  labs(title = "Count of rides per day", y = "Rides per hour")
+```
+
+2.  ***Calculating Average Ride Rer Day***
+
+```{r}
+df2 %>% 
+  ggplot() + geom_col(aes(x=weekly,y=count))+ scale_y_continuous(labels = comma)+
+  labs(title = "Count of rides per day", subtitle = "based on 28 day moving average", y = "Avg rides per day")
+
+
+```
+
+-   *Summarise data with ridable_type*
+
+```{r}
+df_biketype <- df %>% 
+  group_by(member_casual,rideable_type,weekly = floor_date(started_date,"week")) %>% 
+  summarise(Minutes = sum(Minutes), 
+            mean = mean(Minutes),Max = max(Minutes),
+            min = min(Minutes),count = n()) %>% 
+  ungroup()
+
+```
+
+```{r}
+#summary of hourly count
+summary(df2$count)
+
+```
+
+**3. *No of Rides Done on Per month***
+
+```{r}
+#table of counts by hours
+xtabs(df2$count~df2$start_hour)
+```
+
+```{r}
+#table of count by months
+df2$Monthy <- lubridate::month(df2$weekly)
+df2 %>% 
+  ggplot() + geom_col(aes(x=weekly,y=count))+ scale_y_continuous(labels = comma)+
+  labs(title = "Count of rides per week", y = "Rides per hour")
+```
+
+**4. *Ride variation between member Vs Casual***
+
+```{r}
+df_biketype <- df %>% 
+  group_by(member_casual,rideable_type,weekly = floor_date(started_date,"week")) %>% 
+  summarise(Minutes = sum(Minutes), 
+            mean = mean(Minutes),Max = max(Minutes),
+            min = min(Minutes),count = n()) %>% 
+  ungroup()
+View(df_biketype)
+```
+
+![biketype](C:\Users\home\Documents\type.PNG)
+
+```{r}
+#count by rider type
+  
+  ggplot(data = df_biketype) + geom_area( aes(x=weekly,y=count,fill = member_casual))+scale_y_continuous(labels = comma)+
+    labs(title = "Count of rides by rider type")
+```
+
+**5*.Understanding Most Bike type Usage***
+
+```{r}
+#count by bike type (total by week)
+
+  ggplot(df_biketype) + geom_area(aes(x=weekly,y=count,fill = rideable_type))+ scale_y_continuous(labels = comma)+
+    labs(title = "Count of rides by bike type",subtitle = "For the count of 12 months")
+```
+
+***6. Identifying Top 20 station with Higher Ride Count***
+
+```{r}
+df %>% count(start_station_name,sort = TRUE) %>% top_n(20)
+```
+
+```{r}
+# top 20start station by ride count
+   df %>% count(start_station_name,sort = TRUE) %>% top_n(20) %>% ggplot()+geom_col(aes(x=reorder(start_station_name,n),y=n))+
+  coord_flip()+labs(title = "Top 20 start stations by ride count", y = "station name",x="count of rides")+ scale_y_continuous(labels = comma)
+    
+```
+
+### **Key Findings**
+
+-   ***Streeter Dr & Grand Ave*** has the large ride count as
+    ***34984.***
+
+-   Casual riders have the ride count more than members. marking the
+    ***summer months of April to September*** where the most ride have
+    happened.
+
+-   Maximum ***docker bikes*** are used by both riders. In summer the
+    riders have maximized.
+
+## Recommendations
+
+Based on the analysis output indicating a high ride count at Streeter Dr
+& Grand Ave, with casual riders outnumbering members and peak ride
+activity during the summer months, as well as the utilization of maximum
+docker bikes by both rider groups, the marketing strategy team can
+implement the following recommendations:
+
+1.  **Targeted Summer Campaigns**: Launch targeted marketing campaigns
+    during the summer months, especially from April to September, to
+    capitalize on the peak ride activity. Focus on promoting Cyclistic's
+    services and memberships to casual riders, highlighting the benefits
+    of biking during the warmer seasons, such as enjoying the outdoors
+    and avoiding traffic congestion.
+
+2.  **Membership Incentives**: Offer special incentives and promotions
+    to encourage casual riders to sign up for annual memberships.
+    Highlight the cost-effectiveness and convenience of becoming a
+    Cyclistic member, especially during periods of high bike usage like
+    summer, when demand for rentals is at its peak.
+
+3.  **Enhanced Docking Stations**: Ensure that docking stations,
+    especially at popular locations like Streeter Dr & Grand Ave, are
+    well-maintained and stocked with a sufficient number of bikes,
+    including maximum docker bikes. This will improve the overall user
+    experience and make it easier for both casual riders and members to
+    access bikes when needed.
+
+4.  **Social Media Engagement**: Leverage social media platforms to
+    engage with potential customers and promote Cyclistic's services.
+    Share user-generated content, testimonials, and tips for biking in
+    the city during the summer months. Encourage followers to become
+    members and take advantage of exclusive benefits.
+
+5.  **Data-Driven Decision Making**: Continuously analyze ride data to
+    identify trends and patterns in bike usage. Use this information to
+    refine marketing strategies, optimize bike distribution, and make
+    data-driven decisions that enhance the overall effectiveness of
+    Cyclistic's services.
+
+By implementing these recommendations, the marketing strategy team can
+effectively capitalize on the high ride count at Streeter Dr & Grand
+Ave, increase membership conversions among casual riders, and maximize
+the utilization of Cyclistic's bike rental service during the summer
+months.
+
+Thank you,
+
+Nisha Prasanth.
