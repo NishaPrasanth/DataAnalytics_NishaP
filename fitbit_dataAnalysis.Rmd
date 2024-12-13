@@ -1,0 +1,652 @@
+---
+title: "Bellabeat Data Analysis"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    theme: cosmo
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<center><img src="C:\Users\nisha\Documents\imagess.jpg" width="50%" height="50%"/></center>
+
+<font size="3">***Bellabeat** is a high-tech manufacturer of health-focused products for women.*</font>
+
+</center>
+
+# **Ask**
+
+## **Business task**
+
+The business task was to analyse smart device usage data in order to gain insights into how consumers use non-Bellabeat smart devices. Then selecting one Bellabeat product to apply these insights to in the presentation. The business questions are:
+
+1.  What are some trends in smart device usage?
+
+2.  How could these trends apply to Bellabeat customers?
+
+3.  How could these trends help influence Bellabeat marketing strategy?
+
+## **Data Source**
+
+This is a public data that explores smart device users’ daily habits.
+
+***● FitBit Fitness Tracker Data*** click[Mobius](https://www.kaggle.com/arashnic) (CC0: Public Domain, dataset made available through Mobius) contains personal fitness tracker from thirty fitbit users. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits.
+
+## **ROCCC analysis**
+
+**Reliable:**low — the data collected from users without demographic information
+
+**Originality:** low — the data was collected from third-party Amazon Mechanical Turk
+
+**Comprehensive:** high — the data contained personal health data which allowed me to answer business questions
+
+**Current:** low — the respondents were generated during 04.12.2016–05.12.2016.
+
+**Cited:** high — the data source was well-documented.
+
+## **Stakeholders**
+
+***Urška Sršen:***Bellabeat’s co-founder and Chief Creative Officer.
+
+***Sando Mur:***Mathematician and Bellabeat’s co-founder.
+
+***Bellabeat marketing analytics team.***
+
+# **Prepare**
+
+To start, let’s set up the environment by downloading and opening the necessary libraries for the analysis.
+
+## **Load Packages**
+
+<img src="C:\Users\nisha\Documents\Screenshot 2024-07-02 100410.jpg"/>
+
+## **Read**
+
+Here we use three Data set from date April date 4.12.16 to May date 5.12.16.
+
+-   **Daily Activity**
+
+```{r}
+data1 <- read.csv("Raw datsets for Analysis/bellabelt case study dataset/mturkfitbit_export_4.12.16-5.12.16/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+```
+
+-   **Sleep Day**
+
+```{r}
+data2<- read.csv("Raw datsets for Analysis/bellabelt case study dataset/mturkfitbit_export_4.12.16-5.12.16/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+```
+
+-   **Weight Log**
+
+```{r}
+data3<- read.csv("Raw datsets for Analysis/bellabelt case study dataset/mturkfitbit_export_4.12.16-5.12.16/Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+```
+
+# **Process**
+
+## **Data Cleaning**
+
+```{r}
+str(data1)
+```
+
+```{r}
+## Mutate Date from given ActivityDate
+data1 <- data1 %>%
+  distinct() %>%
+  mutate(Date = lubridate::mdy(ActivityDate)) %>%
+  fill(everything(), .direction = "down") %>% 
+  select(-ActivityDate)
+glimpse(data1)
+```
+
+```{r}
+# Check for missing values
+sum(is.na(data1))
+```
+
+```{r}
+# finding distinct and unique value
+unique(data1$Id)
+unique(data1$Date)
+```
+
+```{r}
+str(data2)
+```
+
+```{r}
+## Mutate Date from given ActivityDate
+data2 <- data2 %>%
+  distinct() %>%
+  mutate(Date = lubridate::mdy_hms(SleepDay)) %>% 
+  fill(everything(), .direction = "down") %>% 
+select(-SleepDay)
+
+glimpse(data2)
+```
+
+```{r}
+# Check for missing values
+sum(is.na(data2))
+```
+
+```{r}
+unique(data2$Id)
+unique(data2$Date)
+```
+
+```{r}
+str(data3)
+```
+
+```{r}
+sum(is.na(data3))
+```
+
+```{r}
+data3$datetime <- mdy_hms(data3$Date)
+
+```
+
+```{r}
+data3 <- data3 %>% 
+select(-Fat,-Date,-LogId,-WeightPounds,-IsManualReport)
+glimpse(data3)
+```
+
+```{r}
+data3$Date <- as.Date(data3$datetime) 
+data3$Time <- format(data3$datetime, "%H:%M:%S")
+
+glimpse(data3)
+```
+
+```{r}
+data3 <- data3 %>% 
+  arrange( Date) %>% 
+  select(- datetime)
+
+glimpse(data3)
+```
+
+```{r}
+sum(is.na(data3))
+```
+
+```{r}
+unique(data3$Id)
+unique(data3$Date)
+```
+
+\#**Analyze**
+
+-   **Merging the Dataset**
+
+```{r}
+final_df <- merge(merge(data1, data2,by = c('Id', 'Date'), all = TRUE), data3,by = c('Id', 'Date'), all = TRUE)
+
+
+```
+
+```{r}
+glimpse(final_df)
+View(final_df)
+```
+
+```{r}
+summary(final_df)
+```
+
+-   **Summarize The Data**
+
+```{r}
+bella_daily <- final_df %>%            ##eliminating na from the dataset
+  select(Id,Date,TrackerDistance,TotalSteps,Calories) %>% 
+  filter(complete.cases(.)) 
+glimpse(bella_daily)
+```
+
+```{r}
+summary(bella_daily)
+```
+
+```{r}
+bella_daily <- bella_daily %>%
+   distinct(Id,Date, .keep_all = TRUE) %>% 
+   group_by(Id,Date) %>%
+   summarize(Total_Distance = sum(TrackerDistance),
+   Total_Steps =sum(TotalSteps),
+   Total_calories= sum(Calories)) %>%
+   ungroup()
+
+  glimpse(bella_daily)
+  
+```
+
+-   **Mutate Week in the bella daily activity.**
+
+```{r}
+bella_daily<- bella_daily %>% 
+  mutate(Week = weekdays(Date))
+glimpse(bella_daily)
+```
+
+```{r}
+
+bella_daily_week <- bella_daily%>%
+  distinct(Id,Date, .keep_all = TRUE) %>% 
+  group_by(Id,Week) %>%
+  summarize( average_calories= mean(Total_calories),
+            average_steps = mean (Total_Steps),
+            average_distance= mean(Total_Distance)) %>%
+  ungroup()
+glimpse(bella_daily_week)
+View(bella_daily_week)
+```
+
+-   **Check the sedentary minutes and most active and less active minutes**
+
+```{r}
+
+bella_data_sed <-final_df%>% 
+  select(Id,Date,Calories,ends_with("Minutes")) %>% 
+  mutate(total_minutes = rowSums(across(ends_with("Minutes"))),
+    total_hours = total_minutes %/% 60,
+    total_remaining_minutes = total_minutes %% 60)
+
+glimpse(bella_data_sed)
+```
+
+```{r}
+summary(bella_data_sed)
+```
+
+```{r}
+bella_daily_sed <- bella_data_sed %>% 
+  distinct(Id,Date,.keep_all = TRUE) %>%
+  group_by(Id,Date) %>% 
+  summarize(Max_Active = sum (VeryActiveMinutes),
+            Median_Active = sum(FairlyActiveMinutes),
+            min_Active = sum(LightlyActiveMinutes),
+            Not_ACtive = sum (SedentaryMinutes),
+            total_active_hr = sum(total_hours)) %>%
+  ungroup()
+glimpse(bella_daily_sed)
+
+```
+
+```{r}
+bella_daily_sed<- bella_data_sed%>% 
+  mutate(Week = weekdays(Date))
+glimpse(bella_daily_sed)
+```
+
+-   **Identify the sleep Quality**
+
+```{r}
+DailySleep_quality <-  final_df %>% 
+  select(Id,Date,TotalMinutesAsleep) %>% 
+  drop_na() %>% 
+  mutate(Week = weekdays(Date)) %>% 
+  mutate(sleep_quality = ifelse(TotalMinutesAsleep <= 420, 'Less than 7h',
+                         ifelse(TotalMinutesAsleep <= 540, '7h to 9h', 
+                         'More than 9h'))) %>%
+  mutate(sleep_quality = factor(sleep_quality, 
+                          levels = c('Less than 7h','7h to 9h',
+                                     'More than 9h'))) %>% 
+ungroup()
+
+
+glimpse(DailySleep_quality)
+```
+
+```{r}
+Avrg_sleep <- final_df %>% 
+  select(Id,Date,TotalDistance,TotalMinutesAsleep,TotalTimeInBed) %>% 
+  drop_na() %>% 
+  group_by(Id,Date) %>% 
+  mutate(Week = weekdays(Date)) %>% 
+  summarise(Average_distance = mean(TotalDistance),Average_sleep = mean(TotalMinutesAsleep))%>% 
+  
+  ungroup()
+
+glimpse(Avrg_sleep)
+
+```
+
+-   **Compare Activity and weight change in every users**
+
+```{r}
+weight_data <- final_df %>% 
+  select(Id,Date,WeightKg,TotalSteps) %>% 
+  drop_na() %>% 
+  group_by(Id,Date) %>% 
+  summarise(Average_weight = mean(WeightKg),Average_Steps = mean(TotalSteps)) %>% 
+  ungroup()
+
+glimpse(weight_data)
+```
+
+# **Share**
+
+**5.1Daily Activity of Users \| Total Calories Vs Total Steps Relationship**
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = bella_daily )+geom_smooth(mapping = aes(x = Total_calories, y = Total_Steps))+geom_point(mapping = aes(x = Total_calories, y = Total_Steps,color = Total_calories))+labs(title = 'Calories Burned by Total Steps Taken',
+       y = 'Total_calories',
+       x = 'Total Steps',
+       caption = 'Data Source: FitBit Fitness Tracker Data')
+```
+
+correlation test is used to determine whether and how strongly pairs of variables are related.
+
+**Pearson correlation:** Measures linear relationship between two continuous variables
+
+```{r}
+correlation_result <- cor.test( bella_daily$Total_calories, bella_daily$Total_Steps)
+
+print(correlation_result)
+```
+
+This value indicates the strength and direction of the linear relationship between **Total Steps** and **Calories**. A value of **0.5929493** suggests a moderate positive correlation, meaning that as the number of steps increases, the number of calories burned tends to increase as well
+
+**5.2 Weekly analysis of Daily Activity**
+
+```{r}
+##Weekly analysis of daily activity
+
+ggplot(bella_daily_week, aes(x = Week , y = average_distance , fill = as.factor(Id))) +
+  geom_bar(stat = "summary", fun = "sum") +
+  labs(title = "Average Distance by Week", x = "Week", y = "Distance") +
+  theme_minimal()
+
+
+```
+
+Users are more active and have move more distance on Saturdays.
+
+**5.3 Identifying Daily Active Minutes Distribution**
+
+```{r}
+# Sum up the activity minutes
+total_active_minutes <- sum(bella_daily_sed$VeryActiveMinutes)
+total_Fairly_minutes <- sum(bella_daily_sed$FairlyActiveMinutes)
+total_Lightly_active_minutes <- sum(bella_daily_sed$LightlyActiveMinutes)
+total_sed_minutes <- sum(bella_daily_sed$SedentaryMinutes)
+
+
+# Create a vector of the totals
+activity_totals <- c(total_active_minutes,total_Fairly_minutes,total_Lightly_active_minutes,total_sed_minutes)
+
+
+# Create labels with percentages
+
+activity_labels <- c("VeryActiveMinutes", "FairlyActiveMinutes", "LightlyActiveMinutes","SedentaryMinutes")
+
+
+#Define colors
+colors <- c("lightgreen", "pink", "grey","lightblue")
+
+# Plot the pie chart with percentage labels
+pie(activity_totals, labels = activity_labels, main = "Daily Active Minutes Distribution", col = colors)
+```
+
+In the above plot we see the users 80% Sedentary and are less active.They are mostly lighty active minutes are larger compared to very active minutes.
+
+**5.4 Finding Patterns on their Active Minutes**
+
+```{r}
+
+ggplot(bella_daily_sed, aes(x =VeryActiveMinutes , y = Week ,fill = factor(Id))) +
+  geom_bar(stat = "summary", fun = "sum") +
+  labs(title = " Very Active Minutes by Week", x = "Active Minutes", y = "Week") +
+  theme_minimal()
+```
+
+Most of the users are active on the weekdays.
+
+```{r}
+Time_range <- final_df %>% 
+  select(Id,Time,TotalSteps,Calories) %>% 
+  group_by(Id,Time) %>% 
+  drop_na() %>% 
+  summarise(Avg_step = mean(TotalSteps),Avg_Calories = mean(Calories)) %>% 
+  ungroup()
+glimpse(Time_range)
+```
+
+```{r,echo=FALSE}
+
+##Comparing Time with daily activity
+
+ggplot(Time_range, aes(x = Time, y = Avg_step, group = 1)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Total Steps Over the Time",
+       x = "Time",
+       y = "Total Steps")+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal()
+```
+
+```{r,echo=FALSE}
+ggplot(Time_range, aes(x = Time, y = Avg_Calories, group = 1)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Total Calories Over the Time",
+       x = "Time",
+       y = "Total Calories")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal()
+```
+
+the above plot gives the relationship of time range with steps and calories. we see the users are more active on first half of the day starting from 6AM to 13 PM and later there is a decrease in the burned calories and steps taken. So ,they are mostly active during first half of a Day.
+
+**5.5 Checking Sleep Quality Of Users**
+
+```{r}
+## Total minutes of sleep and their quality 
+
+ggplot(DailySleep_quality,aes(x = TotalMinutesAsleep, fill = sleep_quality)) +
+  geom_histogram(position = 'dodge', bins = 50) + labs(title = "Sleep Distribution",
+    x = "Total Sleep Time",
+    y = "Count")
+```
+
+```{r}
+## Analysing the sleep quality by comparing their activity 
+sleep_check <- final_df %>% 
+  select(Id,Date,TotalSteps,TotalMinutesAsleep,TotalTimeInBed) %>% 
+    mutate(Week = weekdays(Date),
+           No_sleep = TotalTimeInBed-TotalMinutesAsleep)%>% 
+  drop_na() %>% 
+  group_by(Id,Week) %>% 
+  summarise(Avg_Steps = mean(TotalSteps),Avg_Sleep = mean(TotalMinutesAsleep),Avg_Inbed = mean(TotalTimeInBed),No_sleep = mean(No_sleep)) %>% 
+  ungroup()
+glimpse(sleep_check)
+```
+
+**Weekly Sleep Distribution**
+
+```{r}
+ggplot(sleep_check, aes(x = Week , y =Avg_Sleep))+
+  geom_bar(stat = "summary", fun = "sum")+
+  labs(
+    title = "Weekly Sleep Distribution",
+    x = "Week"
+  )
+
+```
+
+**Weekly analysis of Average Time on bed**
+
+```{r}
+ggplot(sleep_check, aes(x = No_sleep, y = Week)) +
+  geom_bar(stat = "summary", fun = "sum") +
+  labs(title = "In bed time by Week", x = "No Sleep", y = "Week") +
+  theme_minimal()
+```
+
+**Distance Has Impact on Sleep.**
+
+```{r, warning=FALSE, message=FALSE}
+## checking whether their distance has impact on sleep.
+
+ggplot(Avrg_sleep) +
+  geom_bar(aes(x = factor(Id), y =Average_distance), stat = "identity", fill = 'pink', alpha = 0.7) +
+  geom_point(aes(x = factor(Id), y = Average_sleep/60), color = 'gold4') +
+  geom_segment(aes(x = factor(Id), xend = factor(Id), y = 0, yend = Average_sleep/60), color = 'gold4' ,group = 1)+ scale_y_continuous(limits=c(0,20), name = "Total Distance", 
+    sec.axis = sec_axis(~.*60, name = "Sleep in minutes"))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(
+    title = "Average distance vs average sleep",
+    x = "Users"
+  )
+```
+
+By the above graph we see very few relation that Average distance covered by user doesn’t make much difference in a better sleep.Users have more time in bed on weekends. Their average sleep is higher on Friday and Sundays.Only few users have a better sleep quality and they spend 7 to 9 hr of sleep. Not everyone has better sleep quality.
+
+**5.6 Analyzing Users weight**
+
+```{r}
+weight_data$Average_weight <- round(weight_data$Average_weight)
+
+glimpse(weight_data)
+```
+
+```{r}
+ggplot(weight_data, aes(x = Date)) +
+  geom_line(aes(y = Average_weight, color = "Average_weight")) +
+  geom_line(aes(y = Average_Steps / 200, color = "Average_Steps")) +  
+  
+  # Scale steps for better visualization
+  scale_y_continuous( limit= c(0,200) ,name = "Average_weight (kg)",
+    sec.axis = sec_axis(~ . * 200, name = "Average_Steps")
+  ) +
+  labs(
+    title = "Average Weight and Average Steps by Date",
+    x = "Date",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = c("Average_weight" = "lightblue", "Average_Steps" = "pink")) +
+  theme_minimal()
+```
+
+```{r,warning=FALSE, message=FALSE}
+##Distribution of weight on various Date
+
+ggplot(weight_data,aes(x = Date,y= Average_weight ,size =Average_weight, color = factor(Id),alpha(0.07)))+geom_point()+
+  scale_y_continuous(limits = c(0 ,150), name = " Average_weight")+
+  labs(
+    title = "Distribution of weight Over a Month",
+    x = "Date"
+  )
+```
+
+```{r}
+user_Weight<-final_df %>% 
+  select(Id,Date,VeryActiveMinutes,WeightKg) %>% 
+  group_by(Id,Date) %>% 
+  drop_na() %>% 
+  ungroup()
+glimpse(user_Weight)
+
+```
+
+```{r,warning=FALSE, message=FALSE}
+ggplot(data = user_Weight,aes(x = VeryActiveMinutes,y= WeightKg , color = factor(Id),size = WeightKg))+geom_point(stat = "summary", fun = "sum") +
+  scale_y_continuous(limits = c(0,130), name ="WeightKg")+
+  labs(
+    title = "Weight Vs VeryActive Minutes of Users",
+    x = "Very Active Minutes"
+  )
+```
+
+```{r}
+mean(weight_data$Average_weight)
+mean(weight_data$Average_Steps)
+```
+
+By visualizing the above plots we see that most of the users have average **20 mins of very active minutes** and the more obese users maintain more active minutes to reduce their weight.And If we see the data of weight log throughout the month the users maintain constant weight and their isn't much improvement.
+
+The Average step taken by the users is **12102**.The average weight is **72**.
+
+# \#**Act**
+
+Based on the analysis, we have identified several key trends and insights that can be leveraged to enhance marketing strategies:
+
+## Key Insights
+
+1.  **Calories Burned and Steps Taken**:
+
+    -   **Insight**: There is a statistically significant relationship between the number of steps taken and calories burned.
+
+    -   **Application**: Highlight this relationship in marketing campaigns to emphasize the importance of physical activity for effective calorie burning.
+
+2.  **Weekly Distance Patterns**:
+
+    -   **Insight**: Users tend to cover more distance on Saturdays compared to other days of the week.
+
+    -   **Application**: Promote weekend challenges or special Saturday fitness events to capitalize on higher activity levels.
+
+3.  **Daily Activity Patterns**:
+
+    -   **Insight**: Users are more active in the first half of the day (6 AM to 1 PM) and show a decrease in activity and calories burned in the later part of the day.
+
+    -   **Application**: Schedule motivational messages and fitness reminders for the morning hours to encourage users to maintain their activity levels throughout the day.
+
+4.  **Sleep Patterns**:
+
+    -   **Insight**: Users spend more time in bed on weekends, with average sleep durations higher on Fridays and Sundays. However, not all users have good sleep quality.
+
+    -   **Application**: Introduce educational content about the benefits of good sleep and how to achieve it, and promote sleep tracking features of the bellabeat device.
+
+5.  **Active Minutes and Weight**:
+
+    -   **Insight**: Most users have an average of 20 minutes of very active minutes daily. More obese users tend to maintain more active minutes to manage their weight.
+
+    -   **Application**: Create targeted fitness programs that encourage short bursts of high-intensity activity, and share success stories of users who have effectively managed their weight through consistent activity.
+
+6.  **Weight Management**:
+
+    -   **Insight**: The data shows that users maintain a constant weight with little improvement over time.
+
+    -   **Application**: Offer personalized weight management plans and tools to help users achieve their weight goals more effectively.
+
+7.  **Average Steps and Weight**:
+
+    -   **Insight**: The average steps taken by users are 12,102, and the average weight is 72 kg.
+
+    -   **Application**: Use these averages as benchmarks in marketing materials, encouraging new users to join the community and reach these fitness milestones.
+
+#### Marketing Strategy Recommendations
+
+1.  **Promote Activity Challenges**:
+
+    -   Introduce weekly or monthly step challenges with rewards for high performers, focusing on increasing user engagement on Saturdays.
+
+2.  **Morning Motivation Campaigns**:
+
+    -   Run campaigns that provide motivational content and fitness tips during the morning hours to leverage the users' higher activity levels in the first half of the day.
+
+3.  **Sleep Health Education**:
+
+    -   Launch educational campaigns about the importance of good sleep and how Fitbit’s sleep tracking features can help improve sleep quality.
+
+4.  **Personalized Fitness Plans**:
+
+    -   Develop and market personalized fitness and weight management plans based on users' activity and weight data, emphasizing achievable daily goals like the 20 minutes of active minutes.
+
+5.  **Success Stories and Testimonials**:
+
+    -   Share success stories and testimonials from users who have seen significant improvements in their fitness and health through consistent use of bellabeat devices.
+
+6.  **Weekend Wellness Programs**:
+
+    -   Create special wellness programs for weekends, encouraging users to stay active and make use of their extra time in bed for better recovery and relaxation.
+
+By aligning marketing strategies with these insights, bellabeat can enhance user engagement, promote healthy habits, and ultimately drive product adoption and satisfaction.
