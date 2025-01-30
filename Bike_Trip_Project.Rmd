@@ -1,0 +1,554 @@
+---
+title: "Case study: How does a bike-share navigate speedy success?"
+author: "Nisha P"
+date: "2024-03-31"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+Cyclistic, a prominent bike-share company headquartered in Chicago, has
+rapidly gained traction in the city's transportation landscape. In an
+effort to delve deeper into their customer base and refine their
+marketing strategies, Cyclistic seeks to understand the distinct
+behaviors and preferences of casual riders versus annual members.
+
+The company recognizes the need to tailor its marketing approach to
+effectively convert casual riders into committed annual members. By
+leveraging data-driven insights, Cyclistic aims to develop a
+comprehensive understanding of how these two customer segments interact
+with their services differently.
+
+**Business Task**
+
+The objective of this business task is to develop a comprehensive
+marketing strategy for Cyclistic that addresses the distinct needs and
+behaviors of both annual members and casual riders. By answering the
+following three questions, we aim to optimize marketing efforts,
+increase customer engagement, and drive conversions from casual riders
+to annual members.
+
+-   ***Understanding Usage Patterns***: Analyze Cyclistic's dataset to
+    identify differences in how annual members and casual riders utilize
+    Cyclistic bikes.
+
+**Data Background**
+
+The dataset was acquired from [Click
+here](https://divvytripdata.s3.amazonaws.com/index.html) and *Motivate
+International Inc* made the data available under this
+[license](https://divvybikes.com/data-license-agreement).
+
+For this project, I downloaded data for twelve months (January to
+December 2020). The zipped CSVs were downloaded and unzipped into a
+folder.
+
+Below shown the dataset of a *cyclistic biketrip data for the year
+2020*.The dataset has *3541683* rows and *13* column.
+
+Due to the large size of data we use *R* to analyse effectively.
+
+## R Programming
+
+-   ***Loading Packages*** The R package is a collection of R functions,
+    data sets, and compiled code that extends the functionality of R.
+    Here we use four packages to analyse the data.
+
+In R, the *library()* function is used to load R packages into your
+current R session
+
+```{r}
+library (tidyverse)
+library (janitor)
+library (lubridate)
+library (scales)
+library(readr)
+library(geosphere)
+rm(list=ls())
+```
+
+-   **Read CSV file**
+
+Below given are the year ***2020 dataset** of cyclistic bike share
+program* which are downloaded and saved as CSV files. Here
+***read.csv()*** is used for reading the csv files.
+
+df1 \<- read.csv("Divvy_Trips_2020_Q1.csv") df2 \<-
+read.csv("202004-divvy-tripdata.csv") df3 \<-
+read.csv("202005-divvy-tripdata.csv") df4 \<-
+read.csv("202006-divvy-tripdata.csv") df5\<-
+read.csv("202007-divvy-tripdata.csv") df6 \<-
+read.csv("202008-divvy-tripdata.csv") df7 \<-
+read.csv("202009-divvy-tripdata.csv") df8 \<-
+read.csv("202010-divvy-tripdata.csv") df9 \<-
+read.csv("202011-divvy-tripdata.csv") df10 \<-
+read.csv("202012-divvy-tripdata.csv") df20 \<-
+rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10)
+
+Save the binded dataset as CSV file.
+
+write.csv(df20,file = "df20.CSV",row.names = FALSE)
+
+```{r}
+df20 <- read_csv("C:/Users/nisha/Desktop/New folder/DataAnalytics_NishaP/Dataset/df20.CSV")
+```
+
+In R, the ***head()*** function is used to view the first few rows of a
+data frame or a matrix. It allows you to quickly inspect the structure
+and content of your data without displaying the entire dataset.
+
+```{r}
+head(df20)
+```
+
+-   **Cleaning Data**
+
+***Janitor*** is an R package that provides a set of functions to clean
+and preprocess data in R data frames
+
+```{r}
+df20_cleanedcols <- janitor::remove_empty(df20,which =c("cols"))
+df20_cleanedrows <- janitor::remove_empty(df20,which =c("rows"))
+dim(df20_cleanedcols)
+dim(df20_cleanedrows)
+```
+
+-   **Removing duplicates and NA values**
+
+```{r}
+df20_clean <- na.omit(df20)
+# for unique and removing duplicates 
+unique(df20_clean)
+dim(df20_clean)
+df20_clean <- df20_clean %>% filter(df20_clean$start_station_name!=" ")
+```
+
+-   **Organising Data**
+
+*Lubridate* is an R package designed to make it easier to work with
+dates and times in R. It provides a set of functions that simplify
+common tasks such as parsing, manipulating, and formatting dates and
+times.we use parse date *ymd_hms()* and *as.Date()* for changing the
+Started_at and ended_at column format.
+
+***Difftime()*** is used for calculating the difference in time. This
+helps us to find and analyse the duration of each ride.
+
+```{r}
+df <- df20_clean
+
+df$started_date <- as.Date(df$started_at)
+df$ended_date <- as.Date(df$ended_at)
+#time as  hours and minutes
+df$started_at <- lubridate::ymd_hms(df$started_at)
+df$ended_at <- lubridate::ymd_hms(df$ended_at)
+df$Start_time <- format(df$started_at,"%H:%M:%S")
+df$End_time <- format(df$ended_at,"%H:%M:%S")
+df$day_of_the_week <- weekdays(df$started_at)
+df$month <- month(df$started_at, label = TRUE, abbr = TRUE)
+
+df$trip_duration <- (as.double(difftime(df$ended_at,df$started_at)))/60
+
+df<-df %>% 
+  filter(trip_duration > 0)
+
+glimpse(df)
+```
+
+Dim function ***dim(df)*** retrieve or set the dimensions of an object,
+such as a matrix or an array.
+
+Here's how it works:
+
+```{r}
+dim(df)
+```
+
+The distHaversine functionin R, from the geosphere package, is used to
+calculate the great-circle distance between two points on the Earth's
+surface given their latitude and longitude coordinates. This distance is
+calculated using the Haversine formula, which accounts for the spherical
+shape of the Earth.
+
+```{r}
+df$distance <- mapply(function(lat1, lon1, lat2, lon2) {
+  distHaversine(c(lon1, lat1), c(lon2, lat2))
+}, df$start_lat, df$start_lng, df$end_lat, df$end_lng)
+
+#change to km
+df$distance <- df$distance/1000
+
+glimpse(df)
+
+
+```
+
+-   **Summarize the data**
+
+## summary of the dataframe by removing unnecessary column
+
+```{r}
+df <- df %>% 
+  select(-start_station_id,-end_station_id,-start_lat,-end_lat,-start_lng,-end_lng)
+glimpse(df)
+```
+
+```{r}
+##calculate riable_type usage
+sum_df <- df %>% 
+  select(rideable_type,member_casual,started_at,start_station_name,day_of_the_week,month,trip_duration,distance) %>% 
+  group_by(rideable_type,member_casual) %>% 
+  summarise(Total_Duration = sum(trip_duration),Count = n(),Total_distance = sum(distance)) %>% 
+  ungroup()
+
+glimpse(sum_df)
+```
+
+```{r}
+##calculate rideable_type usage
+sum_df <- df %>% 
+  select(rideable_type,member_casual,started_at,start_station_name,day_of_the_week,month,trip_duration,distance) %>% 
+  group_by(rideable_type,member_casual) %>% 
+  summarise(Total_Duration = sum(trip_duration),Count = n(),Total_distance = sum(distance)) %>% 
+  ungroup()
+
+glimpse(sum_df)
+```
+
+```{r}
+## member Vs Casual distribution
+Member_type<- df %>% 
+  group_by(member_casual) %>% 
+  summarise(Count = n(),Total_duration = sum(trip_duration),Total_distance = sum(distance)) %>% 
+  ungroup()
+glimpse(Member_type)
+```
+
+```{r}
+# Daily ride 
+ride_per_day <- df %>% 
+  group_by(started_date,member_casual) %>% 
+  summarise(Avg_Trip = mean(trip_duration),Avg_distance = mean(distance),Count = n()) %>% 
+  arrange(started_date) %>% 
+  ungroup()
+
+
+glimpse(ride_per_day)
+
+```
+
+```{r}
+## weekly ride
+Weekly_ride <- df %>% 
+  group_by(day_of_the_week,member_casual) %>% 
+  summarise(Avg_Trip = mean(trip_duration),
+            Avg_distance = mean(distance),Count = n()) %>% 
+  arrange(day_of_the_week) %>% 
+  ungroup()
+
+glimpse(Weekly_ride)
+```
+
+```{r}
+# monthly Ride
+monthly_ride <- df %>% 
+  group_by(month, member_casual) %>% 
+  summarise(Avg_Trip = mean(trip_duration),
+            Avg_distance = mean(distance),Count = n()) %>% 
+  arrange(month) %>% 
+  ungroup()
+
+
+glimpse(monthly_ride)
+```
+
+```{r}
+# Popular start station 
+Popular_top_start_stations <- df %>%
+  count(start_station_name) %>%
+  arrange(desc(n)) %>% 
+  head(10)
+```
+
+```{r}
+# Top 20 start station
+top_start_stations <- df %>%
+  group_by(start_station_name,member_casual) %>% 
+  count(start_station_name) %>%
+  arrange(desc(n)) %>% 
+  head(20) %>% 
+  ungroup()
+```
+
+```{r}
+#Top 20 end Station
+  top_end_stations <- df %>%
+  group_by(end_station_name,member_casual) %>% 
+  count(end_station_name) %>%
+  arrange(desc(n)) %>% 
+  head(20) %>% 
+ ungroup()
+```
+
+```{r}
+head(top_start_stations)
+head(top_end_stations)
+```
+
+```{r}
+#  top station with large distance ride 
+dis_df <- df %>% 
+  group_by(start_station_name,member_casual) %>% 
+  summarise(Avg_distance = mean(distance)) %>% 
+  arrange(desc(Avg_distance)) %>% 
+  head(20) %>% 
+  ungroup()
+
+head(dis_df)
+
+```
+
+```{r}
+#hourly Bike Demand
+
+df <- df %>% 
+  mutate(start_hour = lubridate::hour(started_at))
+```
+
+```{r}
+hourly_need <- df %>% 
+ group_by(member_casual,start_hour) %>% 
+  summarise(number_of_trips = n()) %>% 
+  ungroup()
+```
+
+-   **Data Visualisation**
+
+The *ggplot()* function is the primary function used in the ggplot2
+package, a popular data visualization package in R. It is used to create
+and customize plots based on a grammar of graphics approach, allowing
+users to create complex and highly customizable visualizations with
+relatively simple syntax.
+
+Here's how the ggplot() workes to calculate
+
+1.  ***Member Vs Casual Distribution***
+
+```{r}
+Member_type$Percentage <- round(Member_type$Count/sum(Member_type$Count)*100)
+
+ggplot(Member_type,mapping = aes(x = " ", y = Percentage, fill = member_casual)) + 
+    geom_col(color = "black") + 
+    geom_text(aes(label=paste(member_casual, paste(Percentage,"%"),sep="\n")),     position = position_stack(vjust=0.5), color="black") +
+  labs(title = "Members vs Casual Distribution") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer() +
+  theme_bw()
+```
+
+2.  ***Riders Bike type Usage***
+
+```{r}
+#Most used bike type 
+ ggplot(sum_df,mapping = aes(x = rideable_type ,y = Count,fill = rideable_type)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~member_casual, nrow = 1) +
+  theme(legend.position = "none") +
+  labs(title = "Rider Bike type Usage",x = "Bike_type",y = "Count")
+```
+
+3.  ***Rides Done on Per Day***
+
+```{r}
+# Total Ride per day
+
+ggplot(ride_per_day, aes(x = started_date, y = Count,fill = factor(member_casual))) +
+  geom_col()+ labs( title  ="Ride taken Per Day",
+       x = "Date",
+       y = "Count") +
+  theme_minimal()
+```
+
+4.  ***Weekly Ride Count***
+
+```{r}
+#Total Ride per Week
+
+ggplot(Weekly_ride, aes(x = day_of_the_week, y = Count,fill = factor(member_casual))) +
+  geom_col()+ labs( title  ="Weekly Ride Count",
+       x = "Day of Week",
+       y = "Count") +
+  theme_minimal()
+```
+
+5.  ***Monthly Ride Count***
+
+```{r}
+
+ggplot(monthly_ride, aes(x = month, y = Count ,fill = factor(member_casual))) +
+  geom_col()+ labs( title  ="Monthly Ride Count",
+       x = "Month(year 2020)",
+       y = "Count") +theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+6.  **Average Distance Covered from Various Start Station**
+
+```{r}
+## Average Distance ride by member type in a year
+
+ggplot(dis_df, aes(x = Avg_distance, y = reorder(start_station_name,Avg_distance), fill = factor(member_casual))) +
+  geom_col() +
+  labs(title = "Large Distance Covered from Various Start Station(Top 20)",
+       x = "Distance Covered (km)",
+       y = "Station Name",
+       fill = "Rider Type") +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+7.  **Popular Start Station**
+
+```{r}
+Popular_top_start_stations %>% 
+ggplot() + geom_col(aes(x=n,y= reorder(start_station_name,n)))+ scale_x_continuous(labels = comma)+
+  labs(title = "Top 10 popular Start Station", y = "No of Rides")
+```
+
+8.  **Rider most preferred Stations**
+
+```{r}
+#Top Start Station Name
+
+ggplot(top_start_stations, aes(x = n, y = reorder(start_station_name,n), fill = factor(member_casual))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Top 20 Start Station Name",
+       x = "Ride Count",
+       y = "Station Name",
+       fill = "Rider Type") +
+  theme_minimal()
+```
+
+```{r}
+#Top End Station Name
+
+ggplot(top_end_stations, aes(x = n, y = reorder(end_station_name,n), fill = factor(member_casual))) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  labs(title = "Top 20 End Station Name",
+       x = "Ride Count",
+       y = "Station Name",
+       fill = "Rider Type") +
+  theme_minimal()
+```
+
+9.  **Hourly Bike Demand**
+
+```{r}
+hourly_need %>% 
+  ggplot()+geom_line(aes(x=start_hour,y= number_of_trips,color = member_casual))+
+  labs(title = "Hourly Bike Demand",
+       x = "Hour",
+       y = "No of Trips",
+       fill = "Member_casual") +
+  scale_x_continuous(limits = c(0,24), name ="Hours")+
+  theme_minimal()
+```
+
+## Recommendations for Stakeholders:
+
+1.***Enhance Membership Programs:***
+
+Since 62%\* of the users are members, there is an opportunity to further
+strengthen membership benefits to retain and attract more long-term
+users. Consider offering loyalty programs, discounts for long-term
+memberships, or exclusive benefits during peak seasons (April to
+September).
+
+2.***Bike Type Optimization:***
+
+Given that both members and casual riders prefer docked bikes, ensure
+that there are sufficient docked bikes available at high-demand
+stations, especially during peak hours. Consider investing in more
+docked bikes and maintaining a balance with other bike types.
+
+3.***Seasonal Promotions:***
+
+Since ride frequency increases from April and decreases after September,
+plan for seasonal promotions and marketing campaigns to maximize
+ridership during these months. This could include discounted rides,
+special events, or partnerships with local businesses to encourage more
+usage.
+
+4.***Improve Weekend Services:***
+
+With higher ride volumes on weekends, ensure there are adequate
+resources and bike availability. Consider running special weekend events
+or promotions to further boost ridership.
+
+5.***Focus on High-Demand Stations:***
+
+Vincennes Ave & 104th Station and Streeter Dr & Grand Ave are key
+stations with high ride counts and distances covered. Enhance services
+at these stations, such as better bike maintenance, increased docking
+stations, and potentially setting up customer service points.
+
+6.***Adjust for Peak Hours:***
+
+With peak demand between 3 pm to 6 pm, allocate more bikes and ensure
+efficient redistribution of bikes to meet demand. Consider offering
+incentives for riders who choose to ride outside of these peak hours to
+balance the load.
+
+### Recommendations for Marketing Team:
+
+1.  ***Targeted Marketing Campaigns:***
+
+Develop targeted campaigns to convert casual riders to members.
+Highlight the benefits of membership, such as cost savings, exclusive
+access to promotions, and convenience.
+
+2.  ***Leverage Popular Stations:***
+
+Use the popularity of stations like Streeter Dr & Grand Ave to create
+event-based marketing. For instance, set up pop-up events, offer free
+refreshments, or partner with nearby attractions to draw in more riders.
+
+3.  ***Promote During Peak Seasons:***
+
+Utilize data showing increased rides from April to September to launch
+time-limited offers and campaigns. Engage with riders through social
+media, email newsletters, and local advertisements to promote these
+offers.
+
+4.***Weekend Specials:***
+
+Since weekends see higher ridership, promote special weekend passes or
+family packages to attract group rides. Collaborate with local tourist
+attractions or restaurants to offer combined deals.
+
+5.***Highlight Environmental Impact:***
+
+Emphasize the environmental benefits of using bike share programs in
+your marketing materials. Share statistics on carbon footprint reduction
+and promote the sustainable aspect of biking to attract eco-conscious
+riders.
+
+6.***Dynamic Pricing:***
+
+Implement dynamic pricing strategies during peak hours and seasons to
+manage demand and encourage off-peak usage. Offer discounted rates for
+rides starting early in the morning or late at night.
+
+By addressing these, Cyclistic can enhance user experience, optimize
+operations, and effectively increase ridership and membership.
+
+Thank you,
+
+Nisha Prasanth.
