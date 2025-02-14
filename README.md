@@ -1,7 +1,8 @@
 # HR Data Analysis in Excel and PowerBi
 
-**Author:Nisha 
-  Date: 07.02.2025**
+**Author: Nisha**
+
+**Date: 07.02.2025**
 
 # Introduction 
   HR Data Analysis involves collecting, processing, and interpreting workforce data to improve hiring, employee performance, retention, and overall business outcomes. It leverages analytics tools and techniques to drive strategic HR decisions.By using data-driven insights, HR professionals can enhance recruitment efficiency, reduce turnover, improve employee engagement, and ensure fair compensation. It helps organizations optimize workforce management and align HR strategies with business goals.
@@ -61,7 +62,7 @@ Allign the data in the **Date of termination** column. Do this for all the colum
 
 <img width="928" alt="image" src="https://github.com/user-attachments/assets/4e71d84b-9afc-41da-b19d-5be9a2c4935b" />
 
-Find and Replace the slach "\" with  "-"
+Find and Replace the slach "/" with  "-"
 
 <img width="937" alt="image" src="https://github.com/user-attachments/assets/60b5d406-87c3-4784-9407-d2b7914e1492" />
 
@@ -136,7 +137,7 @@ no we group the data according to the analysis process.
 
 <img width="930" alt="image" src="https://github.com/user-attachments/assets/9e414d7c-9e43-43b7-ba7b-0af8f6c3b8c4" />
 
-**PErsonal Information**
+**Personal Information**
 
 <img width="937" alt="image" src="https://github.com/user-attachments/assets/190846bb-f0c5-4f5b-88b3-8f03835c6dc6" />
 
@@ -161,7 +162,117 @@ Select the sheet from the left side as shown below. and click **Load.**
 
 <img width="919" alt="image" src="https://github.com/user-attachments/assets/e626abf2-98a5-4875-873a-7f20d278b4a8" /> 
 
-Manage the relationship of the data tables by Selecting  option from the model tab.
+Select the right most icon **Model View**.
+Manage the relationship of the data tables by selecting the **"Manage Relationship"** option from **Home** tab. 
 
-![Screenshot 2025-02-04 213113 - Copy](https://github.com/user-attachments/assets/770b0346-97c0-4ea4-b8df-032913d630a9)
+<img width="944" alt="image" src="https://github.com/user-attachments/assets/771309d2-14a4-4675-9e1f-6e264d962c13" />
 
+
+Write a Dax expression to create a new **Date Table** by selecting a **New Table** from **Home Tab**.
+
+The date table can be viewed in the model view layout.
+Connect the **Date table** with **recruitment and termination** table my selecting **manage relationship** in home tab.
+
+<img width="953" alt="image" src="https://github.com/user-attachments/assets/1d95019c-2584-4485-8a0e-21edb959c491" />
+
+Select **Table View** icon which display all the information of the table in row and column. 
+
+select one column and check the data type , format and data category information.
+We can change the data format by changing in the **column tools** tab.
+
+
+<img width="925" alt="image" src="https://github.com/user-attachments/assets/11d657f4-7a83-452b-870e-43ca39cadfc7" />
+
+
+Select the **Transform data** from **Home tab**.
+click **Data source setting** for managing the data source before transforming the dataset. choose the correct source path and close.
+Click the **Transform data** option to open the power query editor
+
+
+ <img width="821" alt="image" src="https://github.com/user-attachments/assets/158c8924-f5e7-47d6-b67d-c099be68d877" />
+
+ <img width="929" alt="image" src="https://github.com/user-attachments/assets/06628050-0db5-4b78-9a3c-9876eb4f9943" />
+
+ <img width="947" alt="image" src="https://github.com/user-attachments/assets/7431e70f-ff3e-4b1e-9fda-78bb4e1ce433" />
+
+Using Reference Creates a new query that links to the original query without copying the data. Any changes made in the original query are reflected in the referenced query.
+
+Select the table **Performance**which need to be referenced and right click as shown below.
+Click the **Reference** option this will create a new table as Creates a new table **Performance(2)**. 
+Repeat this for all table by selcting reference option.
+
+<img width="956" alt="image" src="https://github.com/user-attachments/assets/cb369f96-a2e2-4bd4-9cce-16163d844870" />
+
+Now make the changes to the respective table and check the **Applied steps** displayed in the left to view the no of transformations done on each table this would help to replace or delete the applied steps. 
+
+correcting column name, data type, format and deleting the coulmn and replacing the column are easier in power query editor.
+The **View tab** has list of **Data Preview** options to view the column in descriptive and detail way.
+
+Select **Column Quality Column Distribution Column Profile**option. 
+Which provide Empty , error , valid data, column statistics and Value distribution as shown below.
+
+
+<img width="934" alt="image" src="https://github.com/user-attachments/assets/c51a9887-e14e-4f58-a4b1-6473c1deb9cb" />
+
+By checking the valid and empty data percentage and checking the summary of each column data it help us to understand the column in better format.
+
+We can also de further transformation by selecting Transform tab in the top.
+
+<img width="946" alt="image" src="https://github.com/user-attachments/assets/f874ba74-25ea-42ac-b1ca-2043c4dc1076" />
+
+We can use **manage parameters** in the home tab to filter the dataset.
+
+<img width="941" alt="image" src="https://github.com/user-attachments/assets/abca1aab-c35b-481a-a79f-c504f17efd75" />
+
+much more data transformation like merge, group by and append , pivot table can be used in powerbi with power query editor.
+
+after completing the transformation  click and close and apply option from the home tab.
+
+<img width="875" alt="image" src="https://github.com/user-attachments/assets/b4c48ae9-7713-47fb-ac52-626a77c614f1" />
+
+Creating Report in the Report View.
+Using Visualisation tab the data can be charted and combined as a visual presentation for the stakeholders. 
+the data from the data tab are draged into the visualisation tab field area to view the data in various form of charts and graphs. 
+bar chart, line chart, pie chart , slicer , table , buttons and filters are used for viewing the data in visual form. which gives better understanding.
+
+**Performance Report:**
+
+<img width="931" alt="image" src="https://github.com/user-attachments/assets/491a1d71-9aad-4cf6-a26f-dda7cd533df7" />
+
+
+**Employee Tracker:**
+
+Using **Button** and **Bookmark** we can use different view of report in one page.
+
+Click Recruitment Details Button.
+
+<img width="956" alt="image" src="https://github.com/user-attachments/assets/946bc699-bda0-40c0-bffe-1c7a48c3c380" />
+
+Click Personal Information Button.
+
+<img width="954" alt="image" src="https://github.com/user-attachments/assets/b0bf2967-8c2b-4790-a015-6d8272dc1a6d" />
+
+Click Performance Button.
+
+<img width="952" alt="image" src="https://github.com/user-attachments/assets/2bedc44e-2281-4996-92d7-e9ebc31cd70d" />
+
+
+Finally **Save** and  **Publish** the report in powerbi workspace.
+Click **Publish** from **home tab**. The powerbi service app is connected with the desktop application So, before publishing connect the powerbi service with the desktop.
+
+
+<img width="947" alt="image" src="https://github.com/user-attachments/assets/744677de-918e-49c0-a743-077deb8d1e75" />
+
+<img width="938" alt="image" src="https://github.com/user-attachments/assets/3e6f77a8-d490-42ce-89f0-080059f3fab1" />
+
+Open the my workspace option and select the Report.
+
+<img width="925" alt="image" src="https://github.com/user-attachments/assets/3e62eadf-e68e-427e-af50-27add1a8a423" />
+
+<img width="941" alt="image" src="https://github.com/user-attachments/assets/69575086-f4a6-4083-a37f-eef351708625" />
+
+<img width="941" alt="image" src="https://github.com/user-attachments/assets/69a06c52-3600-416b-b545-a3d23fb682ef" />
+
+Then Create a Dashboard in the powerbi service.
+
+A dashboard in Power BI Service is a single-page, interactive visualization that provides a high-level view of your data, combining multiple reports and datasets. It is typically used to monitor key performance indicators (KPIs) and trends in real time.
